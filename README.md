@@ -1,4 +1,4 @@
-# <sub>Doku--</sub> [![platform]] [![version]] [![build]]
+# <sub>Doku--</sub> [![platform]](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.io/index.html) [![version]](build.gradle) [![build]](https://travis-ci.org/duangsuse/Dokuss)
 [platform]: https://img.shields.io/badge/kotlin-jvm--1.3-orange?style=flat-square&logo=kotlin
 [version]: https://img.shields.io/badge/version-1.0-informational?style=flat-square
 [build]: https://img.shields.io/travis/duangsuse-valid-projects/Dokuss?style=flat-square
@@ -13,6 +13,7 @@ __Dokuss__, _ss_ means "Simple Stupid" __(WIP)__
 ### ByteOrder.Swapper
 
 ```kotlin
+// package org.duangsuse.dokuss.intf
 // see ByteOrder.PrimSwapper
 interface PrimSwapper {
   fun swap(n: Number): Number
@@ -24,41 +25,10 @@ interface PrimSwapper {
 }
 ```
 
-### Byte-Order of I/O stream
-
-```kotlin
-enum class ByteOrder {
-  BigEndian, LittleEndian;
-
-  companion object Detect {
-    val system: ByteOrder = ByteOrder.fromJava(nativeOrder())
-    val jvm: ByteOrder = BigEndian
-  } }
-```
-
-```kotlin
-// enum class org.duangsuse.dokuss.bytes.ByteOrder
-interface ed {
-  var byteOrder: ByteOrder
-  val shouldSwap get() = byteOrder != ByteOrder.system }
-```
-
-### MarkReset
-
-```kotlin
-// <D> in Reader is Cnt(aka. Int)
-interface MarkReset<D> {
-  val isMarking: Boolean
-  fun mark(rl: D) fun reset()
-
-  fun <R> positional(rl: D, op: () -> R): R
-  fun positionalTask(rl: D): Closeable // for Java try-with-resource
-}
-```
-
 ### Readers
 
 ```kotlin
+// package org.duangsuse.dokuss
 interface Reader: ByteOrder.ed, MarkReset<Cnt>, Closeable {
   val estimate: ZCnt get
   val position: Idx get
@@ -94,6 +64,38 @@ interface Writer: ByteOrder.ed, Flushable, Closeable {
 
   enum class StringReprFmt { Bytes, Chars, UTF }
   fun writeString(str: String, kind: StringReprFmt = StringReprFmt.UTF)
+}
+```
+
+### Byte-Order of I/O stream
+
+```kotlin
+enum class ByteOrder {
+  BigEndian, LittleEndian;
+
+  companion object Detect {
+    val system: ByteOrder = ByteOrder.fromJava(nativeOrder())
+    val jvm: ByteOrder = BigEndian
+  } }
+```
+
+```kotlin
+// enum class org.duangsuse.dokuss.bytes.ByteOrder
+interface ed {
+  var byteOrder: ByteOrder
+  val shouldSwap get() = byteOrder != ByteOrder.system }
+```
+
+### MarkReset
+
+```kotlin
+// <D> in Reader is Cnt(aka. Int)
+interface MarkReset<D> {
+  val isMarking: Boolean
+  fun mark(rl: D) fun reset()
+
+  fun <R> positional(rl: D, op: () -> R): R
+  fun positionalTask(rl: D): Closeable // for Java try-with-resource
 }
 ```
 
