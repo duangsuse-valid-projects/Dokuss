@@ -15,6 +15,7 @@ interface Reader: ByteOrder.ed, MarkReset<Cnt>, Closeable {
   fun readAllTo(dst: Buffer)
   fun readTo(dst: Buffer, cnt: Cnt, idx: Idx)
   fun seek(n: LongCnt)
+  fun resetToBegin()
 
   fun readInt8(): Int8
   fun readInt16(): Int16
@@ -31,4 +32,7 @@ interface Reader: ByteOrder.ed, MarkReset<Cnt>, Closeable {
 
   /** @see java.io.DataInput.readUTF */
   fun readStringUTF(): String
+
+  /** @return a copy of this instance, with [re] piped with [re] */
+  fun restream(re: (InputStream) -> InputStream): Reader
 }

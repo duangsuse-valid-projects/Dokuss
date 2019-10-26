@@ -7,17 +7,16 @@ import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
 
 /** @see Reader */
-sealed class Reader(private val s: InputStream): FilterInputStream(s), Reader {
-  private val ds: DataInput = DataInputStream(this as FilterInputStream)
+sealed class Reader(protected val s: InputStream): FilterInputStream(s), Reader {
+  private val ds = object: AuxDataInput(this) {}
   override var byteOrder: ByteOrder = ByteOrder.jvm
 
   override val estimate: ZCnt get() = this.available()
   override var position: Idx = 0
     protected set
 
-  override fun read() = s.read().also { position += 1 }
-  override fun read(b: ByteArray?) = s.read(b).also { position += it }
-  override fun read(b: ByteArray?, off: Int, len: Int) = s.read(b, off, len).also { position += it }
+  override fun read(b: ByteArray?) = read(b, 0, b!!.size)
+  override fun read(b: ByteArray?, off: Int, len: Int) = ds.mayReadFully(b, off, len).also { position += len }
 
   override fun readAllTo(dst: Buffer) { read(dst) }
   override fun readTo(dst: Buffer, cnt: Cnt, idx: Idx) { read(dst, idx, cnt) }
@@ -50,11 +49,27 @@ sealed class Reader(private val s: InputStream): FilterInputStream(s), Reader {
   private var oldPos: Idx = 0
   override fun mark(rl: Cnt) = s.mark(rl).also { marking = true; oldPos = position }
   override fun reset() = s.reset().also { marking = false; position = oldPos }
+  override fun resetToBegin() = s.reset()
   override val isMarking: Boolean get() = marking
 
   inline val hasRemaining: Boolean get() = position <= estimate
+  /** This value could be negative, and `position = position+remaining always @EOF` */
   inline val remaining: Cnt get() = estimate - position
 
+  open val newInstace: (InputStream) -> org.duangsuse.dokuss.Reader = ::Instance
+  override fun restream(re: (InputStream) -> InputStream): Reader {
+    val mapped = newInstace(re(this.s))
+    mapped.byteOrder = this.byteOrder
+    mapped.position = this.position
+    mapped.marking = this.marking
+    mapped.oldPos = this.oldPos
+    return mapped
+  }
+
+  /** Instance for sealed type [Reader] */
+  class Instance(s: InputStream): org.duangsuse.dokuss.Reader(s) {
+    override fun toString(): String = "Reader.Instance($s)"
+  }
   /** [Reader] Wrapper for [RandomAccessFile], note large files (with [Long] file ptr) are not supported, so sad. */
   class File(private val raf: RandomAccessFile): org.duangsuse.dokuss.Reader(FileInputStream(raf.fd)) {
     constructor(file: java.io.File): this(RandomAccessFile(file, "r"))
@@ -70,9 +85,10 @@ sealed class Reader(private val s: InputStream): FilterInputStream(s), Reader {
       set(pos) { longPosition = pos.toLong() }
     override fun seek(n: LongCnt) = raf.seek(longPosition+n)
 
-    private var oldPos: Long = 0
-    override fun mark(rl: Cnt) { marking = true; oldPos = longPosition }
-    override fun reset() { marking = false; longPosition = oldPos }
+    private var oldLongPos: Long = 0
+    override fun mark(rl: Cnt) = mark()
+    fun mark() { marking = true; oldLongPos = longPosition }
+    override fun reset() { marking = false; longPosition = oldLongPos }
     override fun close() = raf.close()
 
     override fun toString(): String = "Reader.File($raf)"
