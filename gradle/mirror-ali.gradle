@@ -1,0 +1,17 @@
+import java.util.regex.Pattern
+
+def ALI_URL = 'http://maven.aliyun.com/nexus/content/groups/public'
+def ALI_SHADOW = Pattern.compile('''^https?://
+(repo1\\.maven\\.org
+|jcenter\\.bintray\\.com
+|repo\\.maven\\.apache\\.org)(/maven2)?/*\$''')
+repositories {
+  if (System.getenv("ALI_MIRROR") != null)
+  all { ArtifactRepository repo -> if (repo instanceof MavenArtifactRepository) {
+    def urlstr = repo.url.toString()
+    if (ALI_SHADOW.matcher(urlstr).matches()) {
+      project.logger.lifecycle("Repository $urlstr is shadowed by $ALI_URL")
+      remove(repo)
+  } } }
+  maven { url ALI_URL }
+}

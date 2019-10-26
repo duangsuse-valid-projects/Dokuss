@@ -1,0 +1,30 @@
+group 'org.duangsuse.dokuss'
+version '1.0'
+
+static def script(x) { "./gradle/${x}.gradle" }
+apply from: script('mirror-ali'), to: allprojects
+
+buildscript {
+  ext.kotlin = 'org.jetbrains.kotlin'
+  ext.kver = '1.3.+'
+  ext.junitver = '4.+'
+  repositories { mavenCentral() }
+  dependencies {
+    classpath("$kotlin:kotlin-gradle-plugin:$kver")
+  }
+}
+
+apply plugin: 'kotlin'
+
+repositories { mavenCentral() }
+dependencies {
+  implementation("$kotlin:kotlin-stdlib-jdk8:$kver")
+  testImplementation("junit:junit:$junitver")
+}
+
+compileKotlin {
+  kotlinOptions {
+    noReflect = true
+    jvmTarget = '1.8'
+  }
+}
