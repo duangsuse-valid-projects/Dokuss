@@ -1,7 +1,7 @@
-# <sub>Doku--</sub> [![platform]](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.io/index.html) [![version]](build.gradle) [![build]](https://travis-ci.org/duangsuse/Dokuss)
+# <sub>Doku--</sub> [![platform]](https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.io/index.html) [![version]](build.gradle) [![build]](https://travis-ci.com/duangsuse/Dokuss)
 [platform]: https://img.shields.io/badge/kotlin-jvm--1.3-orange?style=flat-square&logo=kotlin
 [version]: https://img.shields.io/badge/version-1.0-informational?style=flat-square
-[build]: https://img.shields.io/travis/duangsuse-valid-projects/Dokuss?style=flat-square
+[build]: https://img.shields.io/travis/com/duangsuse/Dokuss?style=flat-square
 
 > _Combinator style binary structure read/write library for Kotlin_
 
