@@ -34,8 +34,8 @@ fun Reader.waitForEstimate(n: ZCnt, op: Runnable = Runnable{}) {
   return
 }
 
-fun Reader.nativeEndian() { byteOrder = ByteOrder.system }
-fun Reader.jvmEndian() { byteOrder = ByteOrder.jvm }
+fun ByteOrder.ed.nativeEndian() { byteOrder = ByteOrder.system }
+fun ByteOrder.ed.jvmEndian() { byteOrder = ByteOrder.jvm }
 
 fun Int.toHexString() = toString(16)
 

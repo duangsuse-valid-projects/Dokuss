@@ -5,12 +5,12 @@ import org.duangsuse.dokuss.intf.Writer
 import java.io.*
 
 /** A stream writer class with byte-order extension */
-class Writer(s: OutputStream): FilterOutputStream(s), Writer {
-  private val dd: DataOutput = DataOutputStream(this)
+class Writer(private val s: OutputStream): Writer, Flushable by s, Closeable by s {
+  private val dd: DataOutput = DataOutputStream(s)
   override var byteOrder: ByteOrder = ByteOrder.jvm
 
-  override fun writeAllFrom(src: Buffer) = write(src)
-  override fun writeFrom(src: Buffer, cnt: Cnt, pos: Idx) = write(src, pos, cnt)
+  override fun writeAllFrom(src: Buffer) = s.write(src)
+  override fun writeFrom(src: Buffer, cnt: Cnt, pos: Idx) = s.write(src, pos, cnt)
 
   private inline fun <reified T: Number> swept(crossinline write_f: DataOutput.(T) -> Unit, n: T) = if (shouldSwap)
     dd.write_f(ByteOrder.PrimSwapper.swap(n) as T) else dd.write_f(n)
@@ -28,4 +28,11 @@ class Writer(s: OutputStream): FilterOutputStream(s), Writer {
         Writer.StringReprFmt.Chars -> dd::writeChars
         Writer.StringReprFmt.UTF -> dd::writeUTF
     } (str)
+
+  override fun toString(): String = "Writer($s)"
+  companion object Factory {
+    fun ofFile(file: File) = Writer(file.also { check(it.canWrite()) {"File $file can't be read"} }.outputStream())
+    fun ofFile(path: String) = ofFile(File(path))
+    fun ofBuffer(size: Int) = Writer(size.let(::ByteArrayOutputStream))
+  }
 }
