@@ -18,7 +18,7 @@ sealed class Reader(protected val s: InputStream): FilterInputStream(s), Reader 
     protected set
 
   override fun read(b: ByteArray?) = read(b, 0, b!!.size)
-  override fun read(b: ByteArray?, off: Int, len: Int) = ds.mayReadFully(b, off, len).also { position += len }
+  override fun read(b: ByteArray?, off: Int, len: Int) = ds.mayReadFully(b!!, len, off).also { position += len }
 
   override fun readAllTo(dst: Buffer) { read(dst) }
   override fun readTo(dst: Buffer, cnt: Cnt, idx: Idx) { read(dst, idx, cnt) }

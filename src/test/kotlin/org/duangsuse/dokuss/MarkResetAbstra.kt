@@ -5,6 +5,7 @@ import org.duangsuse.dokuss.intf.MarkReset
 import org.junit.Assert.*
 import org.junit.Test
 
+/** [MarkReset] */
 class MarkResetAbstra {
   var x = 0
   val inst = object: MarkReset<Int> {
@@ -18,6 +19,8 @@ class MarkResetAbstra {
    * 1. In `op` function beginning, x=(x+1)
    * 2. When `reset()` is called, `x` is like what we updated `x` without `positional ()`
    * 3. rl is passed correctly
+   *
+   * [MarkReset.positional], [MarkReset.positionalTask]
    */
   @Test fun functional() {
     inst.positional(0) {
@@ -35,6 +38,7 @@ class MarkResetAbstra {
     inst.positional(99) { x -= 99 }
     assertEquals(10, x)
   }
+  /** [MarkReset.positional] */
   @Test fun exceptionalSafe() {
     x = 0; try {
       inst.positional<Nothing>(3) { throw Exception() }
