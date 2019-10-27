@@ -81,15 +81,15 @@ sealed class Reader(protected val s: InputStream): FilterInputStream(s), Reader 
     constructor(file: java.io.File): this(RandomAccessFile(file, "r"))
     constructor(path: String): this(java.io.File(path))
 
-    val longEstimate: Long get() = raf.length()
+    val longEstimate: LongZCnt get() = raf.length()
     override val estimate: ZCnt get() = longEstimate.toInt()
-    var longPosition: Long
+    var longPosition: LongIdx
       get() = raf.filePointer
       set(pos) = raf.seek(pos)
     override var position: Idx
       get() = longPosition.toInt()
       set(pos) { longPosition = pos.toLong() }
-    override fun seek(n: LongCnt) = raf.seek(longPosition+n)
+    override fun seek(n: LongZCnt) = raf.seek(longPosition+n)
 
     private var oldLongPos: Long = 0
     override fun mark(rl: Cnt) = mark()

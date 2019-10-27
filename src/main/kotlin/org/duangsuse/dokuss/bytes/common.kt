@@ -3,11 +3,12 @@ package org.duangsuse.dokuss.bytes
 /** Nonzero counter */
 typealias Cnt = Int
 typealias LongCnt = Long
+typealias LongZCnt = Long
 /** Zero-able counter [Cnt] */
 typealias ZCnt = Int
 /** Array-like index */
 typealias Idx = Int
-typealias LongIdx = Int
+typealias LongIdx = Long
 /** Read-write buffer type */
 typealias Buffer = Int8Array
 
@@ -26,7 +27,9 @@ typealias Int16Array = ShortArray
 typealias Int32Array = IntArray
 typealias Int64Array = LongArray
 
+/** Rational numbers (IEE754 floating point) */
 typealias Rat32 = Float
+/** [Rat32] */
 typealias Rat64 = Double
 typealias Rat32Array = FloatArray
 typealias Rat64Array = DoubleArray

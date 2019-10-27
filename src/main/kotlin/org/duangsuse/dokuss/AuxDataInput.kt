@@ -1,6 +1,6 @@
 package org.duangsuse.dokuss
 
-import org.duangsuse.dokuss.bytes.Cnt
+import org.duangsuse.dokuss.bytes.*
 import java.io.InputStream
 import java.io.DataInput
 import java.io.DataInputStream
@@ -44,8 +44,8 @@ open class AuxDataInput(private val s: InputStream): DataInput by DataInputStrea
 
   private fun readBits32(bi: IntIterator) = read(Int::shl, Int::or, 0)(bi)
   private fun readBits64(bi: IntIterator) = read(Long::shl, { or(it.toLong()) }, 0L)(bi)
-  private fun readN32(n: Cnt) = (n.timesIterator { safelyRead() }).asIntIterator().let(::readBits32)
-  private fun readN64(n: Cnt): Long = readBits64(readBytes(n).iterator())
+  private fun readN32(n: Cnt): Int32 = (n.timesIterator { safelyRead() }).asIntIterator().let(::readBits32)
+  private fun readN64(n: Cnt): Int64 = readBits64(readBytes(n).iterator())
 
   @Deprecated("Use readByte().readBoolean() instead",
     replaceWith = ReplaceWith("readByte().readBoolean()"))
@@ -58,13 +58,13 @@ open class AuxDataInput(private val s: InputStream): DataInput by DataInputStrea
   }
 
   /** @return count of bytes actually read */
-  fun mayReadFully(dst: ByteArray, len: Int, pos_0: Int): Int {
+  fun mayReadFully(dst: ByteArray, len: Cnt, pos_0: Idx): Cnt {
     if (len < 0) throw IndexOutOfBoundsException()
     val r = mayReadFullyRec(dst, len, pos_0)
     return if (r == null) len else (len - r)
   }
   /** @return `null` means normally fully read; other: interrupted, length rest */
-  private tailrec fun mayReadFullyRec(dst: ByteArray, rest: Int, pos_x: Int): Int? {
+  private tailrec fun mayReadFullyRec(dst: ByteArray, rest: Cnt, pos_x: Idx): Cnt? {
     if (rest == 0) return null
     val count = s.read(dst, pos_x, rest)
     if (count == (-1)) return rest
@@ -83,7 +83,7 @@ open class AuxDataInput(private val s: InputStream): DataInput by DataInputStrea
    *
    * @see DataInputStream.skipBytes
    */
-  private tailrec fun skipBytesRec(n: Int): Int {
+  private tailrec fun skipBytesRec(n: Cnt): Cnt {
     if (n == 0) return n
     val skipped: Cnt = s.skip(n.toLong()).toInt()
     if (skipped == 0) return n
@@ -91,7 +91,7 @@ open class AuxDataInput(private val s: InputStream): DataInput by DataInputStrea
   }
 }
 
-fun <T> Int.timesIterator(op: (Int) -> T) = object: Iterator<T> {
+fun <T> ZCnt.timesIterator(op: (Int) -> T) = object: Iterator<T> {
   var count = this@timesIterator
   override fun hasNext(): Boolean = count != 0
   override fun next(): T { --count; return op(count) }
@@ -103,7 +103,7 @@ fun Iterator<Int>.asIntIterator() = object: IntIterator() {
   override fun hasNext(): Boolean = this@asIntIterator.hasNext()
   override fun nextInt(): Int = this@asIntIterator.next()
 }
-fun Int.doTimes(op: () -> Unit) {
+fun ZCnt.doTimes(op: () -> Unit) {
   for (_t in 1..this) op()
 }
 
