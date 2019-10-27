@@ -8,8 +8,10 @@ import java.nio.charset.StandardCharsets
 
 /** @see Reader */
 sealed class Reader(protected val s: InputStream): FilterInputStream(s), Reader {
-  private val ds = object: AuxDataInput(this as FilterInputStream) {
+  private val ds = object: AuxDataInput(s) {
     override fun onByteRead() { position += 1 }
+    override fun onBulkRead(n: Cnt) { position += n }
+    override fun onBulkSkip(n: Cnt) { position += n }
   }
   override var byteOrder: ByteOrder = ByteOrder.system
 
@@ -17,15 +19,21 @@ sealed class Reader(protected val s: InputStream): FilterInputStream(s), Reader 
   override var position: Idx = 0
     protected set
 
+  /** NOTE: This function uses [AuxDataInput.safelyRead] from [ds] to update [position] by `1` */
+  override fun read(): Int = ds.safelyRead()
   override fun read(b: ByteArray?) = read(b, 0, b!!.size)
-  override fun read(b: ByteArray?, off: Int, len: Int) = ds.mayReadFully(b!!, len, off).also { position += len }
+  /** NOTE: This function uses [AuxDataInput.mayReadFullyRec] from [ds] to update [position] */
+  override fun read(b: ByteArray?, off: Int, len: Int): Cnt = ds.mayReadFully(b!!, 0, len)
 
   override fun readAllTo(dst: Buffer) { read(dst) }
   override fun readTo(dst: Buffer, cnt: Cnt, idx: Idx) { read(dst, idx, cnt) }
+  /** NOTE: This function updates [position] by actually skipped byte count */
   override tailrec fun seek(n: LongCnt) {
     if (n == 0L) return //EOS
     val skipped = this.skip(n)
-    if (skipped != 0L) seek(n - skipped)
+    if (skipped == 0L) return
+    skipped.doTimes(ds::onByteRead)
+    seek(n - skipped)
   }
 
   private inline fun swept(crossinline read: DataInput.() -> Number) = if (shouldSwap)
@@ -50,17 +58,18 @@ sealed class Reader(protected val s: InputStream): FilterInputStream(s), Reader 
   protected var marking: Boolean = false
   private var oldPos: Idx = 0
   override fun mark(rl: Cnt) = s.mark(rl).also { marking = true; oldPos = position }
-  /** Call [resetToBegin] explicitly to reset without changing marker state
+  /** Call [resetToBegin] __explicitly__ to reset without changing marker state [oldPos], [marking].
    *
-   * This library can define a `markedTimes` to set `position = 0` when reset 'stack' is empty,
-   *  but this is unnecessary since resetToBegin()/reset() is usually determined by programmer before program runs */
+   * This library _can_ define a `var markedTimes: Cnt` to set `position = 0` when reset 'stack' is empty `reset: (markedTimes == 0), --it`
+   *
+   * but this is _unnecessary_ since [resetToBegin]/[reset] is usually __determined by programmer__ before program runs */
   override fun reset() = s.reset().also { marking = false; position = oldPos }
   override fun resetToBegin() = s.reset()
   override val isMarking: Boolean get() = marking
 
-  inline val hasRemaining: Boolean get() = position <= estimate
   /** This value could be negative, and `position = position+remaining always @EOF` */
   inline val remaining: Cnt get() = estimate - position
+  inline val hasRemaining: Boolean get() = position <= estimate
 
   open val newInstance: (InputStream) -> org.duangsuse.dokuss.Reader = ::Instance
   override fun restream(re: (InputStream) -> InputStream): Reader {
