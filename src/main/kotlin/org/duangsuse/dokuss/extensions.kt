@@ -3,8 +3,8 @@ package org.duangsuse.dokuss
 import org.duangsuse.dokuss.bytes.*
 import org.duangsuse.dokuss.intf.Reader
 
-fun Reader.readBytes(n: Cnt): Buffer = ByteArray(n).also { readTo(it, n, 0) }
-fun Reader.readAll(): Buffer = readBytes(estimate)
+fun Reader.readManyByte(n: Cnt): Buffer = ByteArray(n).also { readTo(it, n, 0) }
+fun Reader.readAll(): Buffer = readManyByte(estimate)
 
 inline fun <reified T> Reader.readMany(initial: T, crossinline itemReader: Reader.() -> T):
   (Cnt) -> Array<T> = readxx@{ size ->
