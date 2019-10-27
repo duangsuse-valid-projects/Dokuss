@@ -33,19 +33,23 @@ sealed class Reader(protected val s: InputStream): FilterInputStream(s), Reader 
   /** NOTE: This function uses [AuxDataInput.safelyRead] from [ds] to update [position] by `1` */
   override fun read(): Int = ds.safelyRead()
   override fun read(b: ByteArray?) = this.read(b, 0, b!!.size)
-  /** NOTE: This function uses [AuxDataInput.mayReadFullyRec] from [ds] to update [position] */
+  /** NOTE: This function uses [AuxDataInput.mayReadFullyRec] from [ds] to update [position]; result int: __actual read__ */
   override fun read(b: ByteArray?, off: Int, len: Int): Cnt = ds.mayReadFully(b!!, len, off)
+    .let { if (it == 0) (-1) else it }
+
+  override fun skip(n: LongCnt): Long = skipRec(n).let { n - it }
+  private tailrec fun skipRec(rest: LongCnt): LongCnt {
+    if (rest == 0L) return rest //EOS
+    val skipped = s.skip(rest)
+    if (skipped == 0L) return rest
+    ds.onBulkSkip(skipped.toInt()) //LOSS!
+    return skipRec(rest-skipped)
+  }
 
   override fun readAllTo(dst: Buffer) { read(dst) }
   override fun readTo(dst: Buffer, cnt: Cnt, idx: Idx) { read(dst, idx, cnt) }
   /** NOTE: This function updates [position] by actually skipped byte count */
-  override tailrec fun seek(n: LongCnt) {
-    if (n == 0L) return //EOS
-    val skipped = this.skip(n)
-    if (skipped == 0L) return
-    ds.onBulkSkip(skipped.toInt()) //LOSS!
-    seek(n - skipped)
-  }
+  override fun seek(n: LongCnt) { skip(n) }
 
   //// Read scalar data types
   private inline fun swept(crossinline read: DataInput.() -> Number) = if (shouldSwap)

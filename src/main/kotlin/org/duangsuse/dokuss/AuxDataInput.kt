@@ -111,7 +111,7 @@ open class AuxDataInput(private val s: InputStream): DataInput by DataInputStrea
     val count = s.read(dst, pos_x, rest)
     if (count == (-1)) return rest
     onBulkRead(count)
-    return mayReadFullyRec(dst, rest-count, pos_x +count)
+    return mayReadFullyRec(dst, rest-count, pos_x+count)
   }
 
   /** @see skipBytesRec
