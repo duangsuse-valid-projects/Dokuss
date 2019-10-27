@@ -46,7 +46,7 @@ enum class ByteOrder {
     /** Byte order used for this input stream */
     var byteOrder: ByteOrder
     /** The child-class should swap output byte-order when exporting non-native-endian data */
-    val shouldSwap get() = byteOrder != ByteOrder.system }
+    val shouldSwap get() = byteOrder != ByteOrder.jvm }
 
   /** Byte-order rotate helper class [rotatePrimOrd] */
   abstract class Swapper {

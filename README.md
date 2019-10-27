@@ -8,6 +8,11 @@
 `org.duangsuse.dokuss:dokuss`
 __Dokuss__, _ss_ means "Simple Stupid" __(WIP)__
 
+```kotlin
+import org.duangsuse.dokuss.*
+import org.duangsuse.dokuss.bytes.*
+```
+
 ## Basic interface
 
 ### ByteOrder.Swapper

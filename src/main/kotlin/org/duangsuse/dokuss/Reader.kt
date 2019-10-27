@@ -8,8 +8,10 @@ import java.nio.charset.StandardCharsets
 
 /** @see Reader */
 sealed class Reader(protected val s: InputStream): FilterInputStream(s), Reader {
-  private val ds = object: AuxDataInput(this) {}
-  override var byteOrder: ByteOrder = ByteOrder.jvm
+  private val ds = object: AuxDataInput(this as FilterInputStream) {
+    override fun onByteRead() { position += 1 }
+  }
+  override var byteOrder: ByteOrder = ByteOrder.system
 
   override val estimate: ZCnt get() = this.available()
   override var position: Idx = 0
@@ -48,6 +50,10 @@ sealed class Reader(protected val s: InputStream): FilterInputStream(s), Reader 
   protected var marking: Boolean = false
   private var oldPos: Idx = 0
   override fun mark(rl: Cnt) = s.mark(rl).also { marking = true; oldPos = position }
+  /** Call [resetToBegin] explicitly to reset without changing marker state
+   *
+   * This library can define a `markedTimes` to set `position = 0` when reset 'stack' is empty,
+   *  but this is unnecessary since resetToBegin()/reset() is usually determined by programmer before program runs */
   override fun reset() = s.reset().also { marking = false; position = oldPos }
   override fun resetToBegin() = s.reset()
   override val isMarking: Boolean get() = marking
@@ -56,9 +62,9 @@ sealed class Reader(protected val s: InputStream): FilterInputStream(s), Reader 
   /** This value could be negative, and `position = position+remaining always @EOF` */
   inline val remaining: Cnt get() = estimate - position
 
-  open val newInstace: (InputStream) -> org.duangsuse.dokuss.Reader = ::Instance
+  open val newInstance: (InputStream) -> org.duangsuse.dokuss.Reader = ::Instance
   override fun restream(re: (InputStream) -> InputStream): Reader {
-    val mapped = newInstace(re(this.s))
+    val mapped = newInstance(re(this.s))
     mapped.byteOrder = this.byteOrder
     mapped.position = this.position
     mapped.marking = this.marking
@@ -88,19 +94,27 @@ sealed class Reader(protected val s: InputStream): FilterInputStream(s), Reader 
     private var oldLongPos: Long = 0
     override fun mark(rl: Cnt) = mark()
     fun mark() { marking = true; oldLongPos = longPosition }
+    fun <R> positional(op: () -> R): R {
+      mark(); try { return op() } finally { reset() }
+    }
     override fun reset() { marking = false; longPosition = oldLongPos }
     override fun close() = raf.close()
 
-    override fun toString(): String = "Reader.File($raf)"
+    override fun toString(): String = "Reader.File(#${raf.fd}:${raf.channel}@${raf.filePointer}, L${raf.length()})"
   }
+  /** @see [java.net.URL.openConnection]
+   *  @see [java.net.URLConnection.getInputStream]
+   *  @since JDK 1.0 */
   data class URL(val conn: java.net.URLConnection): org.duangsuse.dokuss.Reader(conn.getInputStream()) {
     constructor(url: java.net.URL): this(url.openConnection())
     constructor(url_str: String): this(java.net.URL(url_str))
-    override fun toString(): String = "Reader.URL($conn)"
+    override fun toString(): String = "Reader.URL(${conn.url})"
   }
+  /** NOTE: [ByteArrayInputStream] uses estimate related to [position], [estimate] == [remaining], [size] == old [estimate] */
   class InMemory(val buffer: Buffer): org.duangsuse.dokuss.Reader(buffer.inputStream()) {
     constructor(str: String, cs: Charset = StandardCharsets.UTF_16): this(str.toByteArray(cs))
     constructor(size: Cnt, initial: Byte = 0x00): this(ByteArray(size) {initial})
-    override fun toString(): String = "Reader.InMemory(${buffer.size})"
+    inline val size: Cnt get() = buffer.size
+    override fun toString(): String = "Reader.InMemory(${buffer.size}$buffer)"
   }
 }
