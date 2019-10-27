@@ -2,7 +2,6 @@ package org.duangsuse.dokuss
 
 import org.duangsuse.dokuss.bytes.*
 import org.duangsuse.dokuss.intf.Reader
-import sun.misc.SharedSecrets
 import java.io.*
 import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
@@ -132,9 +131,18 @@ sealed class Reader(protected val s: InputStream): FilterInputStream(s), Reader 
     override fun resetToBegin() { longPosition = 0L }
 
     override fun close() = raf.close()
-    override fun toString(): String = "Reader.File(#${fd.toHexString()}[$name]@${raf.filePointer}:${raf.length()})"
-    val fd: Int get() = SharedSecrets.getJavaIOFileDescriptorAccess().get(raf.fd)
+    override fun toString(): String = "Reader.File(#${fd?.toHexString()}[$name]@${raf.filePointer}:${raf.length()})"
+    val fd: Int? = fdAccess?.invoke(arrayOf(raf.fd))
     val file: RandomAccessFile get() = this.raf
+
+    companion object Helper {
+      private const val kSharedSecurets = "sun.misc.SharedSecrets"
+      private const val kFdServiceGetMethod = "getJavaIOFileDescriptorAccess"
+      internal val `SharedSecrets%` = this::class.java.tryForName(kSharedSecurets, init = false)
+
+      val fdAccess = `SharedSecrets%`?.get(MethodOf.Fn(kFdServiceGetMethod))?.invokeStatic()?.
+        let { it.javaClass[MethodOf.Unbound("get", FileDescriptor::class.java)]?.access()?.bound<Int>(it) }
+    }
   }
   /** @see [java.net.URL.openConnection]
    *  @see [java.net.URLConnection.getInputStream]
