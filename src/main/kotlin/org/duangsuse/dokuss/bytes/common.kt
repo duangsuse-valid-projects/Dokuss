@@ -36,3 +36,7 @@ typealias Rat64Array = DoubleArray
 
 typealias Char16 = Char
 typealias Char16Array = CharArray
+
+typealias Produces<T> = () -> T
+typealias Receives<T> = (T) -> Unit
+typealias Action<T> = T.() -> Unit
