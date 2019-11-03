@@ -5,7 +5,7 @@ import org.duangsuse.dokuss.intf.Writer
 import java.io.*
 
 /** A stream writer class with byte-order extension */
-class Writer(private val s: OutputStream): Writer, Flushable by s, Closeable by s {
+open class Writer(private val s: OutputStream): Writer, Flushable by s, Closeable by s {
   private val dd: DataOutput = DataOutputStream(s)
   override var byteOrder: ByteOrder = ByteOrder.jvm
 
@@ -30,9 +30,14 @@ class Writer(private val s: OutputStream): Writer, Flushable by s, Closeable by 
     } (str)
 
   override fun toString(): String = "Writer($s)"
-  companion object Factory {
-    fun ofFile(file: File) = Writer(file.also { check(it.canWrite()) {"File $file can't be read"} }.outputStream())
-    fun ofFile(path: String) = ofFile(File(path))
-    fun ofBuffer(size: Int) = Writer(size.let(::ByteArrayOutputStream))
+
+  class File(val file: java.io.File): org.duangsuse.dokuss.Writer
+  (file.also { check(it.canWrite()) {"File $file can't be read"} }.outputStream()) {
+    constructor(path: String): this(java.io.File(path))
+    override fun toString(): String = "Writer.File($file)"
+  }
+  class ofBuffer(val buffer: ByteArrayOutputStream): org.duangsuse.dokuss.Writer(buffer) {
+    constructor(size: Cnt): this(ByteArrayOutputStream(size))
+    override fun toString(): String = "Writer.Buffer($buffer)"
   }
 }
