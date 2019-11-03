@@ -12,8 +12,8 @@ class Writer(private val s: OutputStream): Writer, Flushable by s, Closeable by 
   override fun writeAllFrom(src: Buffer) = s.write(src)
   override fun writeFrom(src: Buffer, cnt: Cnt, pos: Idx) = s.write(src, pos, cnt)
 
-  private inline fun <reified T: Number> swept(crossinline write_f: DataOutput.(T) -> Unit, n: T) = if (shouldSwap)
-    dd.write_f(ByteOrder.PrimSwapper.swap(n) as T) else dd.write_f(n)
+  private inline fun <reified T: Number> swept(crossinline write_f: DataOutput.(T) -> Unit, n: T) = if (isJvmOrder)
+    dd.write_f(n) else dd.write_f(ByteOrder.PrimSwapper.swap(n) as T)
   override fun writeInt8(i: Int8) = swept(DataOutput::writeByte, i.toInt())
   override fun writeInt16(i: Int16) = swept(DataOutput::writeShort, i.toInt())
   override fun writeChar16(c: Char16) = swept(DataOutput::writeChar, c.toInt())

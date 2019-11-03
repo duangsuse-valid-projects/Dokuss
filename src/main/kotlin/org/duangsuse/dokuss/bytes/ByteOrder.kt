@@ -6,7 +6,7 @@ import java.nio.ByteOrder.*
  * An enumeration for [BigEndian] BE(0x00FF), [LittleEndian] LE(0xFF00) machine-word byte representation order
  *
  * + [Detect]: Value [Detect.system] and [Detect.jvm] (always BigEndian, `0xFF.shr(8) == 0`), initialized on-load
- * + [ByteOrder.ed]: An interface of types that has byte-order [ed.shouldSwap]
+ * + [ByteOrder.ed]: An interface of types that has byte-order [ed.isJvmOrder]
  * + [Swapper]: Helper class for byte-sequence rotating
  * + [PrimSwapper]: Instance of [Swapper] but can rotate [Float], [Double], [Char] using coercion methods
  */
@@ -46,7 +46,8 @@ enum class ByteOrder {
     /** Byte order used for this input stream */
     var byteOrder: ByteOrder
     /** The child-class should swap output byte-order when exporting non-native-endian data */
-    val shouldSwap get() = byteOrder != ByteOrder.jvm }
+    val isJvmOrder get() = byteOrder == ByteOrder.jvm
+    val isNativeOrder get() = byteOrder == ByteOrder.system }
 
   /** Byte-order rotate helper class [rotatePrimOrd] */
   abstract class Swapper {

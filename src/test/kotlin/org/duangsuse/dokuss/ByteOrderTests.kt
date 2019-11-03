@@ -14,7 +14,7 @@ class ByteOrderTests {
   }
 
   @Test
-  /** [ed.shouldSwap] */
+  /** [ed.isJvmOrder] */
   fun swapPredicate() {
     var order = Detect.system
     val readinst = object: ed {
@@ -22,9 +22,9 @@ class ByteOrderTests {
         get() = order
         set(v) { order = v }
     }
-    assertEquals(true, readinst.shouldSwap)
-    order = Detect.jvm
-    assertEquals(false, readinst.shouldSwap)
+    assertEquals(true, readinst.isNativeOrder)
+    order = Detect.system
+    assertEquals(false, readinst.isJvmOrder)
   }
 
   @Test

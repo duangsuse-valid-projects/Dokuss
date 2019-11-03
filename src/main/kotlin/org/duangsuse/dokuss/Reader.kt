@@ -51,8 +51,8 @@ sealed class Reader(protected val s: InputStream): FilterInputStream(s), Reader 
   override fun seek(n: LongCnt) { skip(n) }
 
   //// Read scalar data types
-  private inline fun swept(crossinline read: DataInput.() -> Number) = if (shouldSwap)
-    ByteOrder.PrimSwapper.swap(ds.read()) else ds.read()
+  private inline fun swept(crossinline read: DataInput.() -> Number) = if (isJvmOrder)
+    ds.read() else ByteOrder.PrimSwapper.swap(ds.read())
   override fun readInt8(): Int8 = swept(DataInput::readByte) as Int8
   override fun readInt16(): Int16 = swept(DataInput::readShort) as Int16
   override fun readChar16(): Char16 = swept { readChar().toShort() }.toChar()
